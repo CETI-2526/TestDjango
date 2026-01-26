@@ -8,54 +8,23 @@ on:
 
 jobs:
   build:
+
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 4
       matrix:
-        python-version: ["3.10", "3.11"]  # Remove 3.12 for now
-        # Or keep 3.12 but allow failure:
-        # python-version: ["3.10", "3.11", "3.12"]
-        # continue-on-error: ${{ matrix.python-version == '3.12' }}
+        python-version: ["3.10", "3.11", "3.12"]
 
     steps:
-    - uses: actions/checkout@v4
-    
+    - uses: actions/checkout@v3
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
-    
-    - name: Install system dependencies
-      run: |
-        sudo apt-get update
-        sudo apt-get install -y firefox-esr
-    
-    - name: Install Python dependencies
+    - name: Install Dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-        # If requirements.txt doesn't exist, install Django and Selenium directly
-        if [ ! -f requirements.txt ]; then
-          pip install Django selenium webdriver-manager
-        fi
-    
-    - name: Check Django project structure
-      run: |
-        echo "Checking project structure..."
-        ls -la
-        if [ -f manage.py ]; then
-          echo "manage.py exists"
-        else
-          echo "ERROR: manage.py not found!"
-          exit 1
-        fi
-    
     - name: Run Tests
-      env:
-        MOZ_HEADLESS: 1
-        PYTHONPATH: ${{ github.workspace }}
       run: |
-        # First check if we can import Django
-        python -c "import django; print(f'Django version: {django.__version__}')"
-        
-        # Run tests with verbosity to see what's happening
-        python manage.py test --verbosity=2
+        MOZ_HEADLESS=1 python manage.py test
